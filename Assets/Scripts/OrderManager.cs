@@ -8,9 +8,14 @@ public class OrderManager : MonoBehaviour
     public List<Order> UserCreatedOrders;
 
     public OrderContainer orderContainer;
+    public MenuPage menuPage;
 
     public float expirationTime = 30f;
     public float coldTime = 60f;
+
+    public float maxPizzasPerOrder = 3f;
+    public float maxToppingsPerPizza = 4f;
+    public List<string> pizzaToppings = new List<string>{ "Pepperoni", "Sausage", "Mushrooms", "Anchovies", "Eggplant", "Black Olives", "Jalapenos", "Pineapple" };
 
 
     private void Awake()
@@ -50,27 +55,70 @@ public class OrderManager : MonoBehaviour
 
         // Send the order to the UI?
         Debug.Log("Request Order");
-        CreateRequestedOrder("Customer", "Quadrant", new Vector2(0, 0), 10f, "Ready");
-        SpawnOrder();
+
+        Order requestedOrder = CreateRequestedOrder();
+        SpawnOrder(requestedOrder);
     }
 
-    public void SpawnOrder()
+    public void SpawnOrder(Order requestedOrder)
     {
         Debug.Log("Spawn Order");
-        orderContainer.AddOrder();
+        orderContainer.AddOrder(requestedOrder);
     }
 
-    public void CreateRequestedOrder (string customer, string quadrant, Vector2 coordinates, float price, string status)
+    public Order CreateRequestedOrder ()
     {
-        Order order = new Order(customer, quadrant, coordinates, price, status, expirationTime, coldTime);
+        List<List<string>> orderList = new List<List<string>>();
+
+        int numberOfPizzas = Random.Range(1, (int)maxPizzasPerOrder + 1);
+
+        for (int i = 0; i < numberOfPizzas; i++)
+        {
+            List<string> randomPizza = GenerateRandomPizza();
+            orderList.Add(randomPizza);
+        }
+
+        //Order order = new Order(customer, quadrant, coordinates, price, status, expirationTime, coldTime);
+        Order order = new Order("Customer", "Quadrant", new Vector2(0, 0), 10f, "Ready", expirationTime, coldTime, orderList);
         RequestedOrders.Add(order);
+        return order;
     }
 
-    public void CreateUserCreatedOrder(string customer, string quadrant, Vector2 coordinates, float price, string status)
+    private List<string> GenerateRandomPizza()
     {
-        Order order = new Order(customer, quadrant, coordinates, price, status, expirationTime, coldTime);
-        UserCreatedOrders.Add(order);
+        List<string> pizza = new List<string>();
+        int numberOfToppings = Random.Range(0, (int)maxToppingsPerPizza + 1);
+
+        // Add a random topping. Replace the list with the actual toppings available in your game.
+        List<string> availableToppings = new List<string>{ "Pepperoni", "Sausage", "Mushrooms", "Anchovies", "Eggplant", "Black Olives", "Jalapenos", "Pineapple" };
+
+        for (int i = 0; i < numberOfToppings; i++)
+        {
+            if (availableToppings.Count == 0)
+            {
+                break;
+            }
+            
+            string randomTopping = availableToppings[Random.Range(0, availableToppings.Count)];
+            pizza.Add(randomTopping);
+
+            // Remove the selected topping from the list of available toppings
+            availableToppings.Remove(randomTopping);
+        }
+
+        return pizza;
     }
+
+   
+    public void OnOrderClicked(GameObject orderGameObject)
+    {
+        Order clickedOrder = orderContainer.orderDictionary[orderGameObject];
+   
+
+        // Fill the in correct UI elements on the Menu Panel using the order's properties
+        menuPage.setActiveOrder(clickedOrder);
+    }
+
 
     private void UpdateOrderLifeCycle()
     {
@@ -113,7 +161,7 @@ public class OrderManager : MonoBehaviour
         }
     }
 
-    public void HandleUserCreatedOrder(Order userCreatedOrder)
+    /* public void HandleUserCreatedOrder(Order userCreatedOrder)
     {
         // Iterate through the requested orders
         for (int i = 0; i < RequestedOrders.Count; i++)
@@ -138,15 +186,56 @@ public class OrderManager : MonoBehaviour
         // If the code reaches this point, the user-created order did not match any requested order
         // Penalize the user for the incorrect order
         // ...
+    } */
+
+    public void SetOrderReadyForDelivery(Order order)
+    {
+        // Set the order's status to "Ready"
+        order.status = "Ready";
     }
 
-    private bool OrdersMatch(Order order1, Order order2)
+    public bool CheckUserCreatedOrder(Order activeOrder, List<List<string>> userOrderList)
     {
-        // You can add more conditions if needed, depending on the properties you want to compare
-        return order1.customer == order2.customer &&
-            order1.quadrant == order2.quadrant &&
-            order1.coordinates == order2.coordinates &&
-            order1.price == order2.price;
+        if (activeOrder.OrderList.Count != userOrderList.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < activeOrder.OrderList.Count; i++)
+        {
+            List<string> activePizza = activeOrder.OrderList[i];
+            List<string> userPizza = userOrderList[i];
+
+            if (activePizza.Count != userPizza.Count)
+            {
+                return false;
+            }
+
+            foreach (string topping in activePizza)
+            {
+                if (!userPizza.Contains(topping))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public Order GetNextOrder()
+    {
+        // Return the next order in the list of requested orders (if any)
+        if (RequestedOrders.Count > 0)
+        {
+            Order nextOrder = RequestedOrders[0];
+            RequestedOrders.RemoveAt(0);
+            return nextOrder;
+        }
+
+        return null;
+
+        
     }
 
 

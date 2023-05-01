@@ -1,23 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 using UnityEngine;
 
 public class OrderContainer : MonoBehaviour
 {
     [SerializeField] private GameObject orderPrefab;
     public List<GameObject> orders;
+    public Dictionary<GameObject, Order> orderDictionary;
     public List<GameObject> pages;
     [SerializeField] private List<GameObject> arrowButtonNumbers;
+    [SerializeField] private OrderManager orderManager;
 
     public int ordersPerPage = 5;
+
 
     private void Awake()
     {
         orders = new List<GameObject>();
         pages = new List<GameObject>();
+        orderDictionary = new Dictionary<GameObject, Order>();
+        //orderManager = OrderManager.Instance;
     }
 
-    public void AddOrder()
+    public void AddOrder(Order order)
     {
         // If the current page is full, create a new page
         if (orders.Count % ordersPerPage == 0)
@@ -32,18 +38,32 @@ public class OrderContainer : MonoBehaviour
         GameObject currentPage = pages[pages.Count - 1];
 
         // Instantiate the Order object as a child of the current page
-        GameObject newOrder = Instantiate(orderPrefab, currentPage.transform);
+        GameObject newOrderGameObject = Instantiate(orderPrefab, currentPage.transform);
+
+
+        // Subscribe to the click event
+        Debug.Log("newOrderGameObject: " + newOrderGameObject);
+        Debug.Log("OrderClickHandler component: " + newOrderGameObject.GetComponent<OrderClickHandler>());
+        Debug.Log("orderManager: " + orderManager);
+        OrderClickHandler clickHandler = newOrderGameObject.GetComponent<OrderClickHandler>();
+        clickHandler.OnOrderClicked.AddListener(orderManager.OnOrderClicked);
 
         // Set the position of the new Order object based on the number of existing orders
-        float orderHeight = newOrder.GetComponent<SpriteRenderer>().bounds.size.y;
+        float orderHeight = newOrderGameObject.GetComponent<SpriteRenderer>().bounds.size.y;
         int orderIndexInPage = orders.Count % ordersPerPage;
         float yPos = -orderIndexInPage * orderHeight;
         Vector3 newPosition = new Vector3(0f, yPos, -1f);
-        newOrder.transform.localPosition = newPosition;
+        newOrderGameObject.transform.localPosition = newPosition;
 
         // Add the new Order object to the list of orders
-        orders.Add(newOrder);
+        orders.Add(newOrderGameObject);
+        orderDictionary.Add(newOrderGameObject, order);
+
+
     }
+
+
+
 
     public void TogglePageVisibility(int pageIndex, bool isVisible)
     {

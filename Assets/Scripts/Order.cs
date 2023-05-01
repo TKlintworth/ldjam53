@@ -11,9 +11,10 @@ public class Order
     public string status;
     public float expirationTime;
     public float coldTime;
+    public List<List<string>> orderList;
 
     // Will be created by the OrderManager script with the following attributes: string, Quadrant, Coordinates, Price, Status
-    public Order(string customer, string quadrant, Vector2 coordinates, float price, string status, float expirationTime, float coldTime)
+    public Order(string customer, string quadrant, Vector2 coordinates, float price, string status, float expirationTime, float coldTime, List<List<string>> orderList)
     {
         this.customer = customer;
         this.quadrant = quadrant;
@@ -24,6 +25,7 @@ public class Order
         this.coldTime = coldTime;
         this.expirationTime = expirationTime;
         this.coldTime = coldTime;
+        this.orderList = orderList;
     }
 
     public string Customer
@@ -53,6 +55,35 @@ public class Order
     {
         get { return status; }
         set { status = value; }
+    }
+
+    public float ExpirationTime
+    {
+        get { return expirationTime; }
+        set { expirationTime = value; }
+    }
+
+    public float ColdTime
+    {
+        get { return coldTime; }
+        set { coldTime = value; }
+    }
+
+    public List<List<string>> OrderList
+    {
+        get { return orderList; }
+        set { orderList = value; }
+    }
+
+    public void PrintOrderList()
+    {
+        for (int i = 0; i < orderList.Count; i++)
+        {
+            for (int j = 0; j < orderList[i].Count; j++)
+            {
+                Debug.Log(orderList[i][j]);
+            }
+        }
     }
 
     // This method will be called by the OrderManager script when the order is delivered
